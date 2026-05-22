@@ -426,11 +426,11 @@ if "Dashboard" in page:
     st.markdown("""
     <div style="padding: 40px 0 20px;">
         <div class="hero-title">
-            SentiTrack <span class="hero-accent">Agro Bromo</span>
+            News Sentiment Analysis <span class="hero-accent">Argo Bromo</span>
         </div>
         <div class="hero-sub">
             Analisis sentimen berbasis transformer terhadap komentar YouTube dari TVONE, KOMPAS, dan METROTV
-            mengenai kecelakaan Kereta Api Agro Bromo.
+            mengenai kecelakaan Kereta Api Argo Bromo.
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -442,41 +442,42 @@ if "Dashboard" in page:
     with col1:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Komentar</div>
-            <div class="metric-sub">3 channel YouTube</div>
+            <div class="metric-label">Total Komentar</div>
+            <div class="metric-value" style="color:#3B82F6;">1,200</div>
+            <div class="metric-sub">Dari 3 channel YouTube</div>
         </div>""", unsafe_allow_html=True)
+        
     with col2:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Model Utama</div>
-            <div class="metric-value" style="font-size:24px; margin-top:4px;">RoBERTa</div>
-            <div class="metric-sub">Indonesian fine-tuned</div>
+            <div class="metric-label">Labeling Pre-trained</div>
+            <div class="metric-value" style="color:#3EC97A;">IndoBERT & RoBERTa</div>
         </div>""", unsafe_allow_html=True)
+        
     with col3:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Akurasi ML</div>
-            <div class="metric-value" style="color:#3EC97A;">~85%</div>
-            <div class="metric-sub">XGBoost + TF-IDF</div>
+            <div class="metric-label">Model ML</div>
+            <div class="metric-value" style="color:#3EC97A;">RF & XGBoost</div>
         </div>""", unsafe_allow_html=True)
+        
     with col4:
         st.markdown("""
         <div class="metric-card">
             <div class="metric-label">Sentimen Dominan</div>
             <div class="metric-value" style="color:#E85454;">Negatif</div>
-            <div class="metric-sub">Respons publik</div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown('<br>', unsafe_allow_html=True)
-
+    
     # Channel info
     st.markdown('<div class="section-title">Channel YouTube</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
 
     channels = [
-        ("TVONE", "#E63946", "tag-tvone", "qHr-ky9Iwik", "Berita kecelakaan & breaking news"),
-        ("KOMPAS", "#2196F3", "tag-kompas", "-lvgdiR6z1g", "Investigasi mendalam & feature"),
-        ("METROTV", "#4CAF50", "tag-metrotv", "5EHTgRAyyMw", "Analisis & diskusi panel"),
+        ("TVONE", "#E63946", "tag-tvone", "qHr-ky9Iwik"),
+        ("KOMPAS", "#2196F3", "tag-kompas", "-lvgdiR6z1g"),
+        ("METROTV", "#4CAF50", "tag-metrotv", "5EHTgRAyyMw"),
     ]
     for col, (name, color, tag_cls, vid_id, desc) in zip([col1,col2,col3], channels):
         with col:
@@ -489,24 +490,6 @@ if "Dashboard" in page:
 
     st.markdown('<br>', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Rumusan Masalah</div>', unsafe_allow_html=True)
-
-    rms = [
-        ("RM 1", "Distribusi Sentimen", "Bagaimana distribusi sentimen netizen terhadap pemberitaan kecelakaan KA Agro Bromo secara keseluruhan?"),
-        ("RM 2", "Pola per Channel", "Apakah terdapat perbedaan pola sentimen antara channel TVONE, KOMPAS, dan METROTV?"),
-        ("RM 3", "Performa ML", "Bagaimana performa model ML (Random Forest & XGBoost) dalam mengklasifikasikan sentimen?"),
-    ]
-    for rm_id, rm_title, rm_desc in rms:
-        st.markdown(f"""
-        <div class="metric-card" style="margin-bottom:10px; display:flex; gap:16px; align-items:flex-start;">
-            <div style="background:rgba(232,197,71,0.12); color:#E8C547; border-radius:8px; padding:8px 12px;
-                        font-family:'Instrument Serif',serif; font-size:16px; white-space:nowrap; min-width:56px; text-align:center;">
-                {rm_id}
-            </div>
-            <div>
-                <div style="font-weight:600; font-size:14px; margin-bottom:4px;">{rm_title}</div>
-                <div style="font-size:13px; color:#888; line-height:1.5;">{rm_desc}</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
 
 
 # PAGE: Analisis Sentimen (Single Input)
