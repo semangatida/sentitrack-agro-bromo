@@ -19,6 +19,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 :root {
     --bg: #0D0D0E;
@@ -36,17 +37,24 @@ st.markdown("""
     --muted: #9A9A9A;
 }
 
-/* ===== BASE (JANGAN PAKAI *) ===== */
+/* ===== BASE ===== */
 html, body, .stApp {
     background: var(--bg);
     color: var(--text);
     font-family: 'Manrope', sans-serif;
 }
 
-/* ===== FIX ICON STREAMLIT (INI KUNCI BUG keyboard_double) ===== */
-i, span.material-icons, [class*="material-icons"] {
+/* ===== ICON ===== */
+.material-icons,
+.material-icons-outlined,
+.material-icons-round,
+.material-icons-sharp,
+span[class*="material-icons"],
+i[class*="material-icons"] {
     font-family: 'Material Icons' !important;
-    font-style: normal;
+    font-style: normal !important;
+    font-weight: normal !important;
+    display: inline-block !important;
 }
 
 /* ===== HEADING ===== */
@@ -54,17 +62,20 @@ i, span.material-icons, [class*="material-icons"] {
 .section-title,
 .metric-value,
 .result-sentiment-label {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 600;
 }
 
-/* ===== SIDEBAR (PAKSA CONSISTENT) ===== */
+/* ===== SIDEBAR FIX TOTAL ===== */
 section[data-testid="stSidebar"] {
     background: var(--surface) !important;
     border-right: 1px solid var(--border);
-    font-family: 'Manrope', sans-serif !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
 }
-section[data-testid="stSidebar"] * {
+
+/* paksa font sidebar tanpa rusak icon */
+section[data-testid="stSidebar"] *:not(.material-icons) {
     font-family: 'Manrope', sans-serif !important;
     color: var(--text) !important;
 }
