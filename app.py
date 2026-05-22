@@ -48,6 +48,12 @@ body, .stApp {
     font-family: 'Manrope', sans-serif !important;
 }
 
+/* BALIKIN FONT ICON STREAMLIT */
+.material-icons,
+[class*="material-icons"] {
+    font-family: 'Material Icons' !important;
+}
+
 /* HEADING */
 .hero-title,
 .section-title,
