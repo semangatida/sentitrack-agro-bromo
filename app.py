@@ -44,7 +44,7 @@ html, body, .stApp {
 }
 
 /* FORCE ALL ELEMENTS */
-* {
+body, .stApp {
     font-family: 'Manrope', sans-serif !important;
 }
 
