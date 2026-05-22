@@ -37,16 +37,18 @@ st.markdown("""
 }
 
 /* BASE */
-html, body {
+html, body, .stApp {
     background: var(--bg);
     color: var(--text);
+    font-family: 'Manrope', sans-serif !important;
 }
 
+/* FORCE ALL ELEMENTS */
 * {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Manrope', sans-serif !important;
 }
 
-/* HEADING BIAR RAPI */
+/* HEADING */
 .hero-title,
 .section-title,
 .metric-value,
@@ -55,21 +57,19 @@ html, body {
     font-weight: 600;
 }
 
-/* APP */
-.stApp {
-    background: var(--bg);
+/* SIDEBAR (FIX FONT DI SINI) */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] * {
+    font-family: 'Manrope', sans-serif !important;
+    color: var(--text) !important;
 }
 
-/* SIDEBAR */
 section[data-testid="stSidebar"] {
     background: var(--surface) !important;
     border-right: 1px solid var(--border);
 }
-section[data-testid="stSidebar"] * {
-    color: var(--text) !important;
-}
 
-/* Hide Streamlit branding */
+/* Hide branding */
 #MainMenu, footer { visibility: hidden; }
 
 /* CARD */
@@ -90,7 +90,6 @@ section[data-testid="stSidebar"] * {
     font-size: 11px;
     letter-spacing: 0.1em;
     color: var(--muted);
-    margin-bottom: 6px;
 }
 .metric-sub {
     font-size: 12px;
@@ -129,11 +128,10 @@ section[data-testid="stSidebar"] * {
     box-shadow: 0 0 0 2px rgba(255,106,42,0.2) !important;
 }
 
-/* SELECT */
-.stSelectbox div[data-baseweb="select"] > div {
-    background: var(--surface) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
+/* SELECT (INI YANG SERING BEDA FONT) */
+.stSelectbox *,
+div[data-baseweb="select"] * {
+    font-family: 'Manrope', sans-serif !important;
 }
 
 /* BUTTON */
@@ -143,14 +141,13 @@ section[data-testid="stSidebar"] * {
     border-radius: 12px !important;
     border: none !important;
     font-weight: 600 !important;
-    padding: 10px 24px !important;
 }
 .stButton > button:hover {
     background: var(--accent-soft) !important;
     box-shadow: 0 6px 18px rgba(255,106,42,0.3);
 }
 
-/* HILANGKAN BACKGROUND HITAM DALAM BUTTON */
+/* REMOVE BLACK LAYER */
 .stButton > button * {
     background: transparent !important;
 }
@@ -176,28 +173,19 @@ section[data-testid="stSidebar"] * {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 24px;
 }
 
-/* SCORE BAR */
-.score-bar-container {
-    background: rgba(255,255,255,0.05);
-}
-.score-bar {
-    border-radius: 999px;
-}
-
-/* TAB */
+/* TAB (INI JUGA SERING BEDA FONT) */
 button[data-baseweb="tab"] {
-    color: var(--muted) !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
+    color: var(--muted) !important;
 }
 button[data-baseweb="tab"][aria-selected="true"] {
     color: var(--accent) !important;
     border-bottom: 2px solid var(--accent) !important;
 }
 
-/* CLEAN BACKGROUND BUG */
+/* CLEAN BACKGROUND */
 [data-testid="stVerticalBlock"],
 [data-testid="stHorizontalBlock"] {
     background: transparent !important;
