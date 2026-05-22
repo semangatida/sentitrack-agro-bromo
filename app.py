@@ -2,188 +2,239 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import re
+import time
 import warnings
 warnings.filterwarnings('ignore')
 
-# ── Page Config 
+from collections import Counter
+
+# ── Page Config ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="SentiTrack | Agro Bromo",
+    page_title="News Sentiment Analysis · Agro Bromo",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ── Custom CSS 
+# ── Custom CSS ───────────────────────────────────────────────
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600&display=swap');
+
 :root {
-    --bg: #FFFFFF;
-    --surface: #F8F9FA;
-    --border: #E5E7EB;
-    --accent: #111827;
-    --positive: #059669;
-    --neutral: #6B7280;
-    --negative: #DC2626;
-    --text-main: #111827;
-    --text-muted: #6B7280;
+    --bg: #0D0D0E;
+    --surface: #161618;
+    --border: #242426;
+    --accent: #E8C547;
+    --accent2: #5B8DEF;
+    --positive: #3EC97A;
+    --neutral: #E8C547;
+    --negative: #E85454;
+    --text: #F0EFEA;
+    --muted: #888887;
 }
 
-html, body, [class*="css"] {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
-    background-color: var(--bg);
-    color: var(--text-main);
+html, body, [class*="css"], * {
+    font-family: 'Work Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
 }
 
 .stApp {
-    background-color: var(--bg);
+    background: var(--bg);
 }
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background-color: var(--surface) !important;
+    background: var(--surface) !important;
     border-right: 1px solid var(--border);
 }
-
 section[data-testid="stSidebar"] * {
-    color: var(--text-main) !important;
+    color: var(--text) !important;
 }
 
 /* Hide Streamlit branding */
 #MainMenu, footer, header { visibility: hidden; }
 
-/* Typography */
-.hero-title {
-    font-size: 42px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    color: var(--text-main);
-    margin-bottom: 8px;
-}
-.hero-sub {
-    font-size: 16px;
-    color: var(--text-muted);
-    max-width: 600px;
-    line-height: 1.6;
-}
-
-.section-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-main);
-    margin: 32px 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-}
-
-/* Metric Cards */
+/* Metric cards */
 .metric-card {
-    background-color: var(--bg);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    transition: box-shadow 0.2s ease;
+    border-radius: 12px;
+    padding: 20px 24px;
+    transition: border-color 0.2s;
 }
-.metric-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
+.metric-card:hover { border-color: var(--accent); }
 .metric-label {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
 }
 .metric-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text-main);
+    font-family: 'Instrument Serif', serif;
+    font-size: 36px;
     line-height: 1;
+    color: var(--text);
 }
 .metric-sub {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
 }
 
-/* Channel Tags */
-.channel-tag {
+/* Sentiment badge */
+.badge {
     display: inline-block;
     padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
 }
-.tag-tvone   { background-color: #FEE2E2; color: #991B1B; }
-.tag-kompas  { background-color: #DBEAFE; color: #1E40AF; }
-.tag-metrotv { background-color: #D1FAE5; color: #065F46; }
+.badge-positive { background: rgba(62,201,122,0.15); color: #3EC97A; }
+.badge-neutral  { background: rgba(232,197,71,0.15);  color: #E8C547; }
+.badge-negative { background: rgba(232,84,84,0.15);   color: #E85454; }
 
-/* Buttons & Inputs */
-.stTextArea textarea, .stSelectbox > div > div {
-    background-color: var(--bg) !important;
+/* Section header */
+.section-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--text);
+    margin: 24px 0 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+
+/* Input area */
+.stTextArea textarea {
+    background: var(--surface) !important;
     border: 1px solid var(--border) !important;
-    color: var(--text-main) !important;
-    border-radius: 6px !important;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+    color: var(--text) !important;
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
-.stTextArea textarea:focus, .stSelectbox > div > div:focus {
+.stTextArea textarea:focus {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 1px var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(232,197,71,0.15) !important;
 }
 
+/* Selectbox */
+.stSelectbox > div > div {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 10px !important;
+}
+
+/* Button */
 .stButton > button {
-    background-color: var(--accent) !important;
-    color: #FFFFFF !important;
+    background: var(--accent) !important;
+    color: #0D0D0E !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: 10px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
-    padding: 12px 24px !important;
-    transition: opacity 0.2s !important;
+    padding: 10px 28px !important;
+    transition: all 0.2s !important;
 }
 .stButton > button:hover {
-    opacity: 0.9;
+    background: #F5D55F !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(232,197,71,0.3) !important;
 }
 
-/* Result Card */
+/* Progress bar */
+.stProgress > div > div > div {
+    background: var(--accent) !important;
+}
+
+/* Table */
+.stDataFrame { border-radius: 10px; overflow: hidden; }
+
+/* Hero */
+.hero-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 52px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+.hero-accent { color: var(--accent); }
+.hero-sub {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.6;
+    margin-top: 10px;
+}
+
+/* Result card */
 .result-card {
-    background-color: var(--bg);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 14px;
     padding: 24px;
-    margin-top: 24px;
+    margin-top: 16px;
+}
+.result-sentiment-label {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    margin: 8px 0;
 }
 .score-bar-container {
-    background-color: #F3F4F6;
-    border-radius: 4px;
-    height: 8px;
-    margin: 8px 0 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 99px;
+    height: 6px;
+    margin: 6px 0 12px;
     overflow: hidden;
 }
-.score-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.8s ease;
-}
+.score-bar { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
 
-/* Tabs */
+/* Spinner */
+.stSpinner > div { border-top-color: var(--accent) !important; }
+
+/* Tab */
 button[data-baseweb="tab"] {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
-    font-weight: 600 !important;
+    background: transparent !important;
+    color: var(--muted) !important;
+    border-bottom: 2px solid transparent !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text) !important;
+    border-bottom-color: var(--accent) !important;
 }
 
-hr.divider {
+/* Slider */
+.stSlider > div { color: var(--text) !important; }
+
+/* Alert override */
+.stAlert { border-radius: 10px !important; }
+
+.divider {
     border: none;
     border-top: 1px solid var(--border);
-    margin: 32px 0;
+    margin: 24px 0;
 }
+
+/* Channel tag */
+.channel-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.tag-tvone   { background: rgba(230,57,70,0.18);   color: #E63946; }
+.tag-kompas  { background: rgba(33,150,243,0.18);  color: #2196F3; }
+.tag-metrotv { background: rgba(76,175,80,0.18);   color: #4CAF50; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── NLP Setup 
+# ── NLP Setup ────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_nlp():
     import nltk
@@ -229,7 +280,7 @@ def load_indobert():
     return clf
 
 
-# ── Constants 
+# ── Constants ────────────────────────────────────────────────
 SLANG_DICT = {
     'gk':'tidak','ga':'tidak','gak':'tidak','nggak':'tidak','ngga':'tidak',
     'gakk':'tidak','gaada':'tidak ada','tak':'tidak','tdk':'tidak',
@@ -250,6 +301,12 @@ SLANG_DICT = {
     'nih':'ini','tuh':'itu','gini':'begini','gitu':'begitu',
 }
 
+SENTIMENT_COLORS = {
+    'positive': '#3EC97A',
+    'neutral':  '#E8C547',
+    'negative': '#E85454',
+}
+
 LABEL_MAP_ROBERTA = {
     'positive': 'positive', 'POSITIVE': 'positive', 'Positive': 'positive',
     'negative': 'negative', 'NEGATIVE': 'negative', 'Negative': 'negative',
@@ -262,7 +319,7 @@ LABEL_MAP_INDOBERT = {
 }
 
 
-# ── Text Processing
+# ── Text Processing ──────────────────────────────────────────
 def clean_text(text):
     if pd.isna(text): return ''
     text = str(text).lower()
@@ -295,6 +352,7 @@ def analyze_sentiment(text, model_name, clf_roberta, clf_indobert):
             label = LABEL_MAP_ROBERTA.get(result['label'], result['label'])
             score = result['score']
 
+            # Get all scores
             all_results = clf_roberta(processed[:512], top_k=None) if hasattr(clf_roberta, '__call__') else [result]
             scores = {}
             if isinstance(all_results, list) and len(all_results) > 1:
@@ -310,6 +368,7 @@ def analyze_sentiment(text, model_name, clf_roberta, clf_indobert):
             score = result['score']
             scores = {label: score, **{k: (1-score)/2 for k in ['positive','neutral','negative'] if k != label}}
 
+        # Normalize scores
         total = sum(scores.values())
         if total > 0:
             scores = {k: v/total for k,v in scores.items()}
@@ -323,119 +382,129 @@ def analyze_sentiment(text, model_name, clf_roberta, clf_indobert):
         return {'label': 'neutral', 'score': 1.0, 'scores': {'positive': 0.0, 'neutral': 1.0, 'negative': 0.0}, 'error': str(e)}
 
 
-# ── Sidebar 
+# ── Sidebar ──────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div style="padding: 16px 0 32px;">
-        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:8px;">Project Overview</div>
-        <div style="font-size:22px; font-weight:700; color:var(--text-main); line-height:1.2;">
+    <div style="padding: 8px 0 24px;">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.12em; color:#888; margin-bottom:8px;">Project</div>
+        <div style="font-family:'Instrument Serif',serif; font-size:20px; line-height:1.2; color:#F0EFEA;">
             Web Mining &<br>Analisis Sentimen
         </div>
-        <div style="font-size:14px; color:var(--text-muted); margin-top:8px;">Kecelakaan KA Agro Bromo</div>
+        <div style="font-size:12px; color:#888; margin-top:6px;">Kecelakaan KA Agro Bromo</div>
     </div>
+    <hr style="border:none; border-top:1px solid #242426; margin: 0 0 20px;">
     """, unsafe_allow_html=True)
 
     page = st.selectbox(
-        "Navigasi Modul",
-        ["Dashboard Utama", "Analisis Sentimen", "Statistik & Data", "Batch Prediksi", "Tentang Proyek"],
+        "Navigasi",
+        ["Dashboard", "Analisis Sentimen", "Statistik", "Batch Prediksi", "Tentang"],
         label_visibility="collapsed"
     )
 
-    st.markdown("<hr style='border:none; border-top:1px solid var(--border); margin: 32px 0;'>", unsafe_allow_html=True)
-    st.markdown('<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:12px;">Pengaturan Model</div>', unsafe_allow_html=True)
+    st.markdown("<hr style='border:none; border-top:1px solid #242426; margin: 20px 0;'>", unsafe_allow_html=True)
 
-    model_choice = st.selectbox("Pilih Model Transformer", ["RoBERTa", "IndoBERT"], key="model_sel")
-    show_preprocessing = st.toggle("Tampilkan Log Preprocessing", value=False)
+    st.markdown('<div style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:12px;">Pengaturan Model</div>', unsafe_allow_html=True)
 
-    st.markdown("<hr style='border:none; border-top:1px solid var(--border); margin: 32px 0;'>", unsafe_allow_html=True)
+    model_choice = st.selectbox("Model Sentimen", ["RoBERTa", "IndoBERT"], key="model_sel")
+    show_preprocessing = st.toggle("Tampilkan Preprocessing", value=False)
+
+    st.markdown("<hr style='border:none; border-top:1px solid #242426; margin: 20px 0;'>", unsafe_allow_html=True)
     st.markdown("""
-    <div style="font-size:13px; color:var(--text-muted); line-height:2;">
-        <div style="font-weight:700; margin-bottom:8px; font-size:12px; text-transform:uppercase; letter-spacing:0.1em;">Alur Proses</div>
-        1. Pengumpulan Data Web<br>
-        2. Preprocessing Teks<br>
-        3. Ekstraksi Fitur (NLP)<br>
-        4. Klasifikasi Transformer<br>
-        5. Visualisasi Sentimen
+    <div style="font-size:11px; color:#666; line-height:1.8;">
+        <div style="color:#888; font-weight:600; margin-bottom:6px; font-size:11px; text-transform:uppercase; letter-spacing:0.1em;">Pipeline</div>
+        ① Web Crawling<br>
+        ② Preprocessing<br>
+        ③ NLP (Stemming)<br>
+        ④ Sentiment (Transformer)<br>
+        ⑤ ML Classification
     </div>
     """, unsafe_allow_html=True)
 
 
 # PAGE: Dashboard
-
 if "Dashboard" in page:
     st.markdown("""
-    <div style="padding: 24px 0;">
-        <div class="hero-title">SentiTrack Data Overview</div>
+    <div style="padding: 40px 0 20px;">
+        <div class="hero-title">
+            SentiTrack <span class="hero-accent">Agro Bromo</span>
+        </div>
         <div class="hero-sub">
-            Dashboard analisis sentimen berbasis arsitektur Transformer terhadap respons publik dari saluran berita terkemuka mengenai insiden Kereta Api Agro Bromo.
+            Analisis sentimen berbasis transformer terhadap komentar YouTube dari TVONE, KOMPAS, dan METROTV
+            mengenai kecelakaan Kereta Api Agro Bromo.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
+    # Stats overview
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Sumber Data</div>
-            <div class="metric-value">3</div>
-            <div class="metric-sub">Channel Media Nasional</div>
+            <div class="metric-label">Komentar</div>
+            <div class="metric-sub">3 channel YouTube</div>
         </div>""", unsafe_allow_html=True)
     with col2:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Arsitektur Model</div>
-            <div class="metric-value" style="font-size:24px; padding-top:4px;">RoBERTa</div>
+            <div class="metric-label">Model Utama</div>
+            <div class="metric-value" style="font-size:24px; margin-top:4px;">RoBERTa</div>
             <div class="metric-sub">Indonesian fine-tuned</div>
         </div>""", unsafe_allow_html=True)
     with col3:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-label">Akurasi Dasar</div>
-            <div class="metric-value" style="color:#059669;">85.2%</div>
-            <div class="metric-sub">Evaluasi Validation Set</div>
+            <div class="metric-label">Akurasi ML</div>
+            <div class="metric-value" style="color:#3EC97A;">~85%</div>
+            <div class="metric-sub">XGBoost + TF-IDF</div>
         </div>""", unsafe_allow_html=True)
     with col4:
         st.markdown("""
         <div class="metric-card">
             <div class="metric-label">Sentimen Dominan</div>
-            <div class="metric-value" style="color:#DC2626;">Negatif</div>
-            <div class="metric-sub">Mayoritas respons audiens</div>
+            <div class="metric-value" style="color:#E85454;">Negatif</div>
+            <div class="metric-sub">Respons publik</div>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">Sumber Saluran Media</div>', unsafe_allow_html=True)
+    st.markdown('<br>', unsafe_allow_html=True)
+
+    # Channel info
+    st.markdown('<div class="section-title">Channel YouTube</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
 
     channels = [
-        ("TVONE", "#991B1B", "tag-tvone", "Fokus pemberitaan insiden dan berita terkini."),
-        ("KOMPAS", "#1E40AF", "tag-kompas", "Investigasi mendalam dan ulasan kronologi."),
-        ("METROTV", "#065F46", "tag-metrotv", "Analisis ahli dan diskusi panel operasional."),
+        ("TVONE", "#E63946", "tag-tvone", "qHr-ky9Iwik", "Berita kecelakaan & breaking news"),
+        ("KOMPAS", "#2196F3", "tag-kompas", "-lvgdiR6z1g", "Investigasi mendalam & feature"),
+        ("METROTV", "#4CAF50", "tag-metrotv", "5EHTgRAyyMw", "Analisis & diskusi panel"),
     ]
-    for col, (name, color, tag_cls, desc) in zip([col1,col2,col3], channels):
+    for col, (name, color, tag_cls, vid_id, desc) in zip([col1,col2,col3], channels):
         with col:
             st.markdown(f"""
-            <div class="metric-card" style="border-top: 3px solid {color}; border-radius: 4px;">
+            <div class="metric-card" style="border-left: 3px solid {color};">
                 <span class="channel-tag {tag_cls}">{name}</span>
-                <div style="font-size:14px; color:var(--text-muted); margin-top:12px; line-height:1.5;">{desc}</div>
+                <div style="font-size:12px; color:#888; margin: 10px 0 4px; font-family:monospace; font-size:11px;">{vid_id}</div>
+                <div style="font-size:13px; color:#C0BFBA;">{desc}</div>
             </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">Fokus Analisis</div>', unsafe_allow_html=True)
+    st.markdown('<br>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Rumusan Masalah</div>', unsafe_allow_html=True)
 
     rms = [
-        ("01", "Distribusi Sentimen Publik", "Bagaimana proporsi sentimen positif, netral, dan negatif dari komentar netizen terhadap penanganan insiden?"),
-        ("02", "Pola Karakteristik Media", "Apakah terdapat perbedaan kecenderungan sentimen audiens berdasarkan gaya peliputan masing-masing media?"),
-        ("03", "Evaluasi Performa Model", "Bagaimana perbandingan efektivitas model klasifikasi dalam memahami konteks dan slang bahasa Indonesia?"),
+        ("RM 1", "Distribusi Sentimen", "Bagaimana distribusi sentimen netizen terhadap pemberitaan kecelakaan KA Agro Bromo secara keseluruhan?"),
+        ("RM 2", "Pola per Channel", "Apakah terdapat perbedaan pola sentimen antara channel TVONE, KOMPAS, dan METROTV?"),
+        ("RM 3", "Performa ML", "Bagaimana performa model ML (Random Forest & XGBoost) dalam mengklasifikasikan sentimen?"),
     ]
     for rm_id, rm_title, rm_desc in rms:
         st.markdown(f"""
-        <div class="metric-card" style="margin-bottom:16px; display:flex; gap:20px; align-items:flex-start;">
-            <div style="color:var(--text-muted); font-size:18px; font-weight:700; padding-top:2px;">
+        <div class="metric-card" style="margin-bottom:10px; display:flex; gap:16px; align-items:flex-start;">
+            <div style="background:rgba(232,197,71,0.12); color:#E8C547; border-radius:8px; padding:8px 12px;
+                        font-family:'Instrument Serif',serif; font-size:16px; white-space:nowrap; min-width:56px; text-align:center;">
                 {rm_id}
             </div>
             <div>
-                <div style="font-weight:700; font-size:16px; margin-bottom:6px; color:var(--text-main);">{rm_title}</div>
-                <div style="font-size:14px; color:var(--text-muted); line-height:1.6;">{rm_desc}</div>
+                <div style="font-weight:600; font-size:14px; margin-bottom:4px;">{rm_title}</div>
+                <div style="font-size:13px; color:#888; line-height:1.5;">{rm_desc}</div>
             </div>
         </div>""", unsafe_allow_html=True)
 
@@ -444,19 +513,20 @@ if "Dashboard" in page:
 
 elif "Analisis Sentimen" in page:
     st.markdown("""
-    <div style="padding: 24px 0;">
-        <div class="hero-title">Pengujian Sentimen</div>
-        <div class="hero-sub">Lakukan klasifikasi sentimen pada teks secara real-time menggunakan model NLP yang telah dilatih.</div>
+    <div style="padding: 24px 0 8px;">
+        <div class="hero-title" style="font-size:40px;">Analisis <span class="hero-accent">Sentimen</span></div>
+        <div class="hero-sub">Input komentar YouTube untuk dianalisis sentimennya secara real-time.</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-    st.markdown('<div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:12px; text-transform:uppercase;">Pilih Teks Sampel</div>', unsafe_allow_html=True)
+    # Quick examples
+    st.markdown('<div style="font-size:12px; color:#888; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em;">Contoh Komentar Cepat</div>', unsafe_allow_html=True)
     ex_cols = st.columns(3)
     examples = [
-        ("Konteks Negatif", "Sistem keamanan kereta harus segera dievaluasi total, kejadian ini sangat mengecewakan."),
-        ("Konteks Netral", "Menurut informasi terbaru, pihak KNKT sedang melakukan proses investigasi di lapangan."),
-        ("Konteks Positif", "Apresiasi untuk tim SAR dan petugas medis yang sigap melakukan evakuasi korban."),
+        ("Negatif", "Ini sungguh tragedi yang sangat menyedihkan. Pemerintah harus segera bertindak dan memperbaiki sistem keselamatan kereta api di Indonesia!"),
+        ("Netral", "Saya melihat laporan ini dari Metro TV, tampaknya ada masalah teknis pada sistem pengereman. Perlu investigasi lebih lanjut."),
+        ("Positif", "Terima kasih kepada seluruh tim penyelamat yang sudah bekerja keras membantu korban. Semoga para korban cepat sembuh."),
     ]
     for col, (label, text) in zip(ex_cols, examples):
         with col:
@@ -465,11 +535,12 @@ elif "Analisis Sentimen" in page:
 
     st.markdown('<br>', unsafe_allow_html=True)
 
+    # Main input
     user_input = st.text_area(
-        "Teks Input:",
+        "Masukkan komentar YouTube:",
         value=st.session_state.get('input_text', ''),
-        height=140,
-        placeholder="Masukkan teks ulasan atau komentar di sini...",
+        height=130,
+        placeholder="Tulis atau tempel komentar YouTube di sini...",
         label_visibility="collapsed",
         key="main_input"
     )
@@ -479,24 +550,26 @@ elif "Analisis Sentimen" in page:
         if user_input:
             word_count = len(user_input.split())
             char_count = len(user_input)
-            st.markdown(f'<div style="font-size:13px; color:var(--text-muted); margin-top:8px; font-weight:500;">Detail Input: {word_count} kata | {char_count} karakter</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="font-size:12px; color:#666; margin-top:6px;">{word_count} kata · {char_count} karakter</div>', unsafe_allow_html=True)
     with col_btn:
-        analyze_btn = st.button("Proses Teks", use_container_width=True)
+        analyze_btn = st.button("Analisis →", use_container_width=True)
 
+    # Show preprocessing
     if show_preprocessing and user_input:
-        with st.expander("Inspeksi Pra-pemrosesan Teks"):
+        with st.expander("🔧 Hasil Preprocessing"):
             p1 = clean_text(user_input)
             p2 = normalize_slang(p1)
             cols = st.columns(2)
             with cols[0]:
-                st.markdown("**Tahap 1: Pembersihan Karakter**")
+                st.markdown("**Clean Text**")
                 st.code(p1, language=None)
             with cols[1]:
-                st.markdown("**Tahap 2: Normalisasi Slang**")
+                st.markdown("**Normalized (Slang)**")
                 st.code(p2, language=None)
 
+    # Analysis result
     if analyze_btn and user_input.strip():
-        with st.spinner("Memproses analisis teks..."):
+        with st.spinner("Menganalisis sentimen..."):
             try:
                 if model_choice == "RoBERTa":
                     clf = load_roberta()
@@ -513,255 +586,302 @@ elif "Analisis Sentimen" in page:
                 score = result['score']
                 scores = result['scores']
 
-                color_map = {'positive': '#059669', 'neutral': '#6B7280', 'negative': '#DC2626'}
+                color_map = {'positive': '#3EC97A', 'neutral': '#E8C547', 'negative': '#E85454'}
+                icon_map  = {'positive': '😊', 'neutral': '😐', 'negative': '😔'}
                 label_id  = {'positive': 'Positif', 'neutral': 'Netral', 'negative': 'Negatif'}
-                color = color_map.get(label, '#111827')
+                color = color_map.get(label, '#888')
+                icon  = icon_map.get(label, '🤔')
 
                 st.markdown(f"""
                 <div class="result-card" style="border-left: 4px solid {color};">
-                    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted);">Kesimpulan Model ({model_choice})</div>
-                    <div style="margin: 16px 0 24px;">
-                        <div style="font-size:32px; font-weight:700; color:{color}; line-height:1;">
-                            {label_id.get(label, label.capitalize())}
+                    <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:#888;">Hasil Analisis · {model_choice}</div>
+                    <div style="display:flex; align-items:center; gap:16px; margin: 12px 0;">
+                        <div style="font-size:48px;">{icon}</div>
+                        <div>
+                            <div style="font-family:'Instrument Serif',serif; font-size:36px; color:{color}; line-height:1;">
+                                {label_id.get(label, label.capitalize())}
+                            </div>
+                            <div style="font-size:13px; color:#888; margin-top:4px;">Konfiden: {score*100:.1f}%</div>
                         </div>
-                        <div style="font-size:14px; color:var(--text-muted); margin-top:8px; font-weight:500;">Tingkat Kepercayaan: {score*100:.1f}%</div>
                     </div>
-                    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:16px;">Distribusi Probabilitas Kelas</div>
+                    <hr style="border:none; border-top:1px solid #242426; margin: 16px 0;">
+                    <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#888; margin-bottom:12px;">Skor Per Kelas</div>
                 """, unsafe_allow_html=True)
 
                 for sent_key, sent_label in [('positive','Positif'), ('neutral','Netral'), ('negative','Negatif')]:
                     s = scores.get(sent_key, 0.0) * 100
                     c = color_map[sent_key]
                     st.markdown(f"""
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:500; margin-bottom:6px;">
-                            <span style="color:var(--text-main);">{sent_label}</span>
-                            <span style="color:{c}; font-weight:700;">{s:.1f}%</span>
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                            <span style="color:#C0BFBA;">{sent_label}</span>
+                            <span style="color:{c}; font-weight:600;">{s:.1f}%</span>
                         </div>
                         <div class="score-bar-container">
-                            <div class="score-bar" style="width:{s}%; background-color:{c};"></div>
+                            <div class="score-bar" style="width:{s}%; background:{c};"></div>
                         </div>
                     </div>""", unsafe_allow_html=True)
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
             except Exception as e:
-                st.error(f"Terjadi kesalahan sistem: {e}")
+                st.error(f"Error: {e}\n\nPastikan model terinstal: `pip install transformers torch`")
 
     elif analyze_btn:
-        st.warning("Mohon masukkan teks sebelum melakukan pemrosesan.")
+        st.warning("Silakan masukkan teks terlebih dahulu.")
 
 
-
-# PAGE: Statistik & Data
-
+# PAGE: Statistik 
 elif "Statistik" in page:
     st.markdown("""
-    <div style="padding: 24px 0;">
-        <div class="hero-title">Eksplorasi Data Base</div>
-        <div class="hero-sub">Visualisasi statistik deskriptif dari dataset hasil penarikan data (crawling).</div>
+    <div style="padding: 24px 0 8px;">
+        <div class="hero-title" style="font-size:40px;">Statistik <span class="hero-accent">&amp; EDA</span></div>
+        <div class="hero-sub">Eksplorasi distribusi dan pola data komentar YouTube.</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-    st.info("Halaman ini dikhususkan untuk menampilkan data historis. Silakan unggah file CSV hasil pengumpulan data untuk melihat distribusi.")
+    st.info("Halaman ini menampilkan visualisasi berbasis data crawling yang sudah dijalankan. Upload file CSV hasil crawling untuk melihat statistik real.")
 
-    uploaded = st.file_uploader("Unggah dataset CSV", type=["csv"])
+    uploaded = st.file_uploader("Upload CSV hasil analisis (opsional)", type=["csv"])
 
     if uploaded:
         import io
         df = pd.read_csv(io.BytesIO(uploaded.getvalue()))
-        st.success(f"Berhasil memuat {len(df):,} baris data.")
+        st.success(f"Dataset loaded: {len(df):,} baris, {len(df.columns)} kolom")
 
         if 'sentiment' in df.columns and 'Source' in df.columns:
-            st.markdown('<div class="section-title">Visualisasi Distribusi Sentimen</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Distribusi Sentimen</div>', unsafe_allow_html=True)
 
             try:
                 import matplotlib.pyplot as plt
                 import matplotlib
                 matplotlib.rcParams.update({
-                    'font.family': 'sans-serif',
-                    'font.sans-serif': ['Helvetica Neue', 'Helvetica', 'Arial'],
-                    'figure.facecolor': '#FFFFFF',
-                    'axes.facecolor': '#FFFFFF',
-                    'text.color': '#111827',
-                    'axes.labelcolor': '#6B7280',
-                    'xtick.color': '#6B7280',
-                    'ytick.color': '#6B7280',
+                    'figure.facecolor': '#161618',
+                    'axes.facecolor': '#161618',
+                    'text.color': '#F0EFEA',
+                    'axes.labelcolor': '#888887',
+                    'xtick.color': '#888887',
+                    'ytick.color': '#888887',
                     'axes.spines.top': False,
                     'axes.spines.right': False,
                     'axes.spines.left': False,
-                    'axes.edgecolor': '#E5E7EB',
-                    'grid.color': '#F3F4F6',
+                    'axes.spines.bottom': True,
+                    'axes.edgecolor': '#242426',
+                    'grid.color': '#242426',
                     'axes.grid': True,
-                    'grid.axis': 'y'
                 })
 
-                fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-                COLORS = {'positive':'#059669','neutral':'#6B7280','negative':'#DC2626'}
-                
+                fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+                fig.patch.set_facecolor('#161618')
+
+                COLORS = {'positive':'#3EC97A','neutral':'#E8C547','negative':'#E85454'}
                 sent_counts = df['sentiment'].value_counts()
                 sent_order = [s for s in ['positive','neutral','negative'] if s in sent_counts.index]
-                colors = [COLORS.get(s,'#111827') for s in sent_order]
+                colors = [COLORS.get(s,'#888') for s in sent_order]
 
-                axes[0].bar([s.capitalize() for s in sent_order], [sent_counts.get(s,0) for s in sent_order],
-                            color=colors, width=0.5)
-                axes[0].set_title('Frekuensi Keseluruhan', fontsize=14, fontweight='bold', pad=16)
-                axes[0].set_ylabel('Jumlah Komentar')
+                axes[0].bar(sent_order, [sent_counts.get(s,0) for s in sent_order],
+                            color=colors, edgecolor='#0D0D0E', linewidth=1.5, width=0.5)
+                axes[0].set_title('Distribusi Sentimen', color='#F0EFEA', fontsize=13, pad=12)
+                axes[0].set_ylabel('Jumlah', color='#888')
 
                 if 'Source' in df.columns:
                     ct = df.groupby(['Source','sentiment']).size().unstack(fill_value=0)
                     ct_pct = ct.div(ct.sum(axis=1), axis=0) * 100
                     bottom = np.zeros(len(ct_pct))
-                    
                     for sent in sent_order:
                         if sent in ct_pct.columns:
                             axes[1].bar(ct_pct.index, ct_pct[sent].values,
                                         bottom=bottom, label=sent.capitalize(),
-                                        color=COLORS.get(sent,'#111827'))
+                                        color=COLORS.get(sent,'#888'), alpha=0.85, edgecolor='#0D0D0E')
                             bottom += ct_pct[sent].values
-                            
-                    axes[1].set_title('Komposisi Per Saluran Media (%)', fontsize=14, fontweight='bold', pad=16)
-                    axes[1].legend(frameon=False, bbox_to_anchor=(1.05, 1), loc='upper left')
+                    axes[1].set_title('Sentimen per Channel (%)', color='#F0EFEA', fontsize=13, pad=12)
+                    axes[1].legend(fontsize=9, labelcolor='#C0BFBA', facecolor='#161618', edgecolor='#242426')
 
                 plt.tight_layout()
                 st.pyplot(fig)
             except ImportError:
-                st.warning("Pustaka Matplotlib diperlukan untuk merender visualisasi.")
+                st.warning("Install matplotlib untuk visualisasi: `pip install matplotlib`")
 
-        st.markdown('<div class="section-title">Pratinjau Tabel Data</div>', unsafe_allow_html=True)
-        st.dataframe(df.head(100), use_container_width=True, height=400)
+        # Raw data table
+        st.markdown('<div class="section-title">Preview Data</div>', unsafe_allow_html=True)
+        st.dataframe(
+            df.head(50),
+            use_container_width=True,
+            height=300
+        )
 
     else:
-        st.markdown('<div class="section-title">Data Simulasi (Contoh Tampilan)</div>', unsafe_allow_html=True)
+        # Sample/demo charts
+        st.markdown('<div class="section-title">Demo Visualisasi (Data Sampel)</div>', unsafe_allow_html=True)
+
         try:
             import matplotlib.pyplot as plt
             import matplotlib
             matplotlib.rcParams.update({
-                'font.family': 'sans-serif',
-                'font.sans-serif': ['Helvetica Neue', 'Helvetica', 'Arial'],
-                'figure.facecolor': '#FFFFFF',
-                'axes.facecolor': '#FFFFFF',
-                'text.color': '#111827',
-                'axes.labelcolor': '#6B7280',
-                'xtick.color': '#6B7280',
-                'ytick.color': '#6B7280',
-                'axes.spines.top': False,
-                'axes.spines.right': False,
-                'axes.spines.left': False,
-                'axes.edgecolor': '#E5E7EB',
-                'grid.color': '#F3F4F6',
-                'axes.grid': True,
-                'grid.axis': 'y'
+                'figure.facecolor': '#161618', 'axes.facecolor': '#161618',
+                'text.color': '#F0EFEA', 'axes.labelcolor': '#888887',
+                'xtick.color': '#888887', 'ytick.color': '#888887',
+                'axes.spines.top': False, 'axes.spines.right': False,
+                'axes.edgecolor': '#242426', 'grid.color': '#1E1E20',
+                'axes.grid': True, 'grid.alpha': 0.5,
             })
 
+            # Simulated data
             np.random.seed(42)
             n = 3200
             channels = np.random.choice(['TVONE','KOMPAS','METROTV'], n, p=[0.35,0.3,0.35])
             sentiments = np.random.choice(['positive','neutral','negative'], n, p=[0.22,0.31,0.47])
-            df_demo = pd.DataFrame({'Source': channels, 'sentiment': sentiments})
+            df_demo = pd.DataFrame({'Source': channels, 'sentiment': sentiments,
+                                    'word_count': np.random.poisson(15, n)})
 
-            COLORS = {'positive':'#059669','neutral':'#6B7280','negative':'#DC2626'}
+            COLORS = {'positive':'#3EC97A','neutral':'#E8C547','negative':'#E85454'}
+            CHANNEL_COLORS = {'TVONE':'#E63946','KOMPAS':'#2196F3','METROTV':'#4CAF50'}
 
-            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+            fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+            fig.patch.set_facecolor('#161618')
 
-            sent_counts = df_demo['sentiment'].value_counts().reindex(['positive','neutral','negative'])
-            axes[0].bar([s.capitalize() for s in sent_counts.index], sent_counts.values,
-                        color=[COLORS[s] for s in sent_counts.index], width=0.5)
-            axes[0].set_title('Frekuensi Keseluruhan', fontsize=14, fontweight='bold', pad=16)
+            # Chart 1: Sentiment distribution
+            sent_counts = df_demo['sentiment'].value_counts().reindex(['positive','neutral','negative'], fill_value=0)
+            bars = axes[0].bar(sent_counts.index, sent_counts.values,
+                               color=[COLORS[s] for s in sent_counts.index],
+                               edgecolor='#0D0D0E', linewidth=1.5, width=0.5)
+            for bar, val in zip(bars, sent_counts.values):
+                pct = val / n * 100
+                axes[0].text(bar.get_x()+bar.get_width()/2, bar.get_height()+20,
+                             f'{pct:.1f}%', ha='center', fontsize=10, fontweight='bold', color='#C0BFBA')
+            axes[0].set_title('Distribusi Sentimen', color='#F0EFEA', fontsize=13, pad=12)
 
+            # Chart 2: Per channel stacked
             ct = df_demo.groupby(['Source','sentiment']).size().unstack(fill_value=0)
             ct_pct = ct.div(ct.sum(axis=1), axis=0) * 100
             bottom = np.zeros(len(ct_pct))
-            
             for sent in ['positive','neutral','negative']:
-                axes[1].bar(ct_pct.index, ct_pct[sent].values, bottom=bottom, 
-                            label=sent.capitalize(), color=COLORS[sent])
-                bottom += ct_pct[sent].values
-                
-            axes[1].set_title('Komposisi Per Saluran Media (%)', fontsize=14, fontweight='bold', pad=16)
-            axes[1].legend(frameon=False, bbox_to_anchor=(1.05, 1), loc='upper left')
+                if sent in ct_pct.columns:
+                    axes[1].bar(ct_pct.index, ct_pct[sent].values,
+                                bottom=bottom, label=sent.capitalize(),
+                                color=COLORS[sent], alpha=0.85, edgecolor='#0D0D0E', linewidth=0.5)
+                    for i,(v,b) in enumerate(zip(ct_pct[sent].values, bottom)):
+                        if v > 6:
+                            axes[1].text(i, b+v/2, f'{v:.0f}%', ha='center', va='center',
+                                         fontsize=9, fontweight='bold', color='#0D0D0E')
+                    bottom += ct_pct[sent].values
+            axes[1].set_title('Sentimen per Channel (%)', color='#F0EFEA', fontsize=13, pad=12)
+            axes[1].legend(fontsize=9, labelcolor='#C0BFBA', facecolor='#161618', edgecolor='#242426')
+
+            # Chart 3: Word count distribution
+            for src, color in CHANNEL_COLORS.items():
+                data = df_demo[df_demo['Source']==src]['word_count']
+                axes[2].hist(data, bins=20, alpha=0.6, label=src, color=color, edgecolor='none')
+            axes[2].set_title('Distribusi Jumlah Kata', color='#F0EFEA', fontsize=13, pad=12)
+            axes[2].set_xlabel('Jumlah Kata', color='#888')
+            axes[2].legend(fontsize=9, labelcolor='#C0BFBA', facecolor='#161618', edgecolor='#242426')
 
             plt.tight_layout()
             st.pyplot(fig)
-        except ImportError:
-            pass
+            st.caption("*Data simulasi untuk demo. Upload CSV hasil crawling untuk data asli.*")
 
+        except ImportError:
+            st.warning("Install matplotlib: `pip install matplotlib`")
 
 
 # PAGE: Batch Prediksi
 
 elif "Batch" in page:
     st.markdown("""
-    <div style="padding: 24px 0;">
-        <div class="hero-title">Pemrosesan Batch</div>
-        <div class="hero-sub">Lakukan klasifikasi sentimen dalam jumlah besar menggunakan skema input baris atau unggah berkas CSV.</div>
+    <div style="padding: 24px 0 8px;">
+        <div class="hero-title" style="font-size:40px;">Batch <span class="hero-accent">Prediksi</span></div>
+        <div class="hero-sub">Analisis sentimen untuk banyak komentar sekaligus.</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["Input Manual Multiple", "Unggah Berkas Data"])
+    tab1, tab2 = st.tabs(["Input Manual", "Upload CSV"])
 
     with tab1:
-        st.markdown("<div style='margin-top:16px;'></div>", unsafe_allow_html=True)
         bulk_text = st.text_area(
-            "Masukkan beberapa baris teks:",
+            "Masukkan komentar (satu baris = satu komentar):",
             height=200,
-            placeholder="Baris teks pertama...\nBaris teks kedua...\nBaris teks ketiga...",
+            placeholder="Komentar pertama...\nKomentar kedua...\nKomentar ketiga...",
             label_visibility="collapsed"
         )
 
         col_opt1, col_opt2 = st.columns(2)
         with col_opt1:
-            max_batch = st.slider("Batas maksimal pemrosesan", 5, 50, 10)
+            max_batch = st.slider("Maks komentar diproses", 5, 50, 10)
         with col_opt2:
             st.markdown('<br>', unsafe_allow_html=True)
-            batch_btn = st.button("Jalankan Pemrosesan Manual", use_container_width=True)
+            batch_btn = st.button("Jalankan Batch Analisis", use_container_width=True)
 
         if batch_btn and bulk_text.strip():
             lines = [l.strip() for l in bulk_text.strip().split('\n') if l.strip()][:max_batch]
-            st.markdown(f'<div style="font-size:14px; color:var(--text-muted); margin: 16px 0 8px; font-weight:500;">Sistem sedang memproses {len(lines)} entri data...</div>', unsafe_allow_html=True)
-            
+
+            st.markdown(f'<div style="font-size:13px; color:#888; margin: 16px 0 8px;">Memproses {len(lines)} komentar...</div>', unsafe_allow_html=True)
+
             progress_bar = st.progress(0)
             results = []
 
             try:
-                clf_r = load_roberta() if model_choice == "RoBERTa" else None
-                clf_i = load_indobert() if model_choice == "IndoBERT" else None
+                if model_choice == "RoBERTa":
+                    clf_r = load_roberta()
+                    clf_i = None
+                else:
+                    clf_r = None
+                    clf_i = load_indobert()
 
                 for i, line in enumerate(lines):
                     res = analyze_sentiment(line, model_choice, clf_r, clf_i)
                     results.append({
-                        'Teks Input': line[:100] + ('...' if len(line)>100 else ''),
-                        'Label Sentimen': res['label'].capitalize(),
-                        'Probabilitas Output': f"{res['score']*100:.1f}%"
+                        'Komentar': line[:80] + ('...' if len(line)>80 else ''),
+                        'Sentimen': res['label'].capitalize(),
+                        'Konfiden': f"{res['score']*100:.1f}%",
+                        'Positif':  f"{res['scores'].get('positive',0)*100:.1f}%",
+                        'Netral':   f"{res['scores'].get('neutral',0)*100:.1f}%",
+                        'Negatif':  f"{res['scores'].get('negative',0)*100:.1f}%",
                     })
                     progress_bar.progress((i+1)/len(lines))
 
                 df_results = pd.DataFrame(results)
-                st.markdown('<div class="section-title">Ringkasan Hasil Output</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-title">Hasil</div>', unsafe_allow_html=True)
                 st.dataframe(df_results, use_container_width=True)
 
+                # Summary
+                sent_summary = df_results['Sentimen'].value_counts()
+                cols = st.columns(3)
+                icons = {'Positive':'😊','Neutral':'😐','Negative':'😔','Positif':'😊','Netral':'😐','Negatif':'😔'}
+                for i, (label, count) in enumerate(sent_summary.items()):
+                    pct = count / len(df_results) * 100
+                    color = {'Positive':'#3EC97A','Neutral':'#E8C547','Negative':'#E85454',
+                             'Positif':'#3EC97A','Netral':'#E8C547','Negatif':'#E85454'}.get(label,'#888')
+                    with cols[i % 3]:
+                        st.markdown(f"""
+                        <div class="metric-card" style="text-align:center;">
+                            <div style="font-size:28px;">{icons.get(label,'🤔')}</div>
+                            <div style="font-weight:600; color:{color}; font-size:16px;">{label}</div>
+                            <div style="font-family:'Instrument Serif',serif; font-size:28px;">{count}</div>
+                            <div style="color:#888; font-size:12px;">{pct:.1f}%</div>
+                        </div>""", unsafe_allow_html=True)
+
+                # Download
                 csv_out = df_results.to_csv(index=False)
-                st.download_button("Unduh Ekspor Data", csv_out, file_name="output_batch_manual.csv", mime="text/csv")
+                st.download_button("Download Hasil CSV", csv_out,
+                                   file_name="batch_sentiment_results.csv", mime="text/csv")
 
             except Exception as e:
-                st.error(f"Sistem gagal mengeksekusi perintah: {e}")
+                st.error(f"Error: {e}")
 
     with tab2:
-        st.markdown("<div style='margin-top:16px;'></div>", unsafe_allow_html=True)
-        uploaded_csv = st.file_uploader("Unggah CSV (Sistem mendeteksi kolom 'Comment', 'Komentar', atau 'Text')", type=["csv"])
-        
+        uploaded_csv = st.file_uploader("Upload CSV dengan kolom 'Comment' atau 'comment'", type=["csv"])
         if uploaded_csv:
             import io
             df_up = pd.read_csv(io.BytesIO(uploaded_csv.getvalue()))
             comment_col = next((c for c in df_up.columns if c.lower() in ['comment','komentar','text','teks']), None)
 
             if comment_col:
-                st.success(f"Kolom target terdeteksi: '{comment_col}'. Total baris tersedia: {len(df_up):,}")
-                n_process = st.slider("Alokasi pemrosesan baris", 10, min(500, len(df_up)), min(50, len(df_up)))
+                st.success(f"{len(df_up):,} baris ditemukan. Kolom teks: '{comment_col}'")
+                n_process = st.slider("Jumlah baris diproses", 10, min(500, len(df_up)), min(50, len(df_up)))
 
-                if st.button("Mulai Pemrosesan Data Berkala", use_container_width=True):
+                if st.button("Jalankan pada CSV", use_container_width=True):
                     sample = df_up[comment_col].dropna().head(n_process).tolist()
                     prog = st.progress(0)
 
@@ -769,66 +889,80 @@ elif "Batch" in page:
                         clf_r = load_roberta() if model_choice == "RoBERTa" else None
                         clf_i = load_indobert() if model_choice == "IndoBERT" else None
                         labels = []
-                        
                         for idx, text in enumerate(sample):
                             r = analyze_sentiment(str(text), model_choice, clf_r, clf_i)
-                            labels.append(r['label'].capitalize())
+                            labels.append(r['label'])
                             prog.progress((idx+1)/len(sample))
 
                         df_out = df_up.head(n_process).copy()
-                        df_out['Hasil_Sentimen'] = labels
-                        
-                        st.markdown('<div class="section-title">Hasil Prediksi Tabel</div>', unsafe_allow_html=True)
-                        st.dataframe(df_out, use_container_width=True, height=400)
-                        
+                        df_out['predicted_sentiment'] = labels
+                        st.dataframe(df_out, use_container_width=True, height=300)
                         csv_dl = df_out.to_csv(index=False)
-                        st.download_button("Unduh Hasil Anotasi Data", csv_dl, file_name="anotasi_sentimen.csv", mime="text/csv")
+                        st.download_button("Download CSV", csv_dl, file_name="predicted_sentiments.csv", mime="text/csv")
                     except Exception as e:
-                        st.error(f"Terjadi kegagalan fungsi iterasi: {e}")
+                        st.error(f"Error: {e}")
             else:
-                st.error("Header kolom yang valid ('Comment', 'Komentar', 'Text') tidak dapat dideteksi dalam skema CSV yang diunggah.")
+                st.warning("Kolom 'Comment', 'comment', 'text', atau 'teks' tidak ditemukan. Pastikan CSV memiliki header yang sesuai.")
 
 
 # PAGE: Tentang
 elif "Tentang" in page:
     st.markdown("""
-    <div style="padding: 24px 0;">
-        <div class="hero-title">Spesifikasi Proyek Sistem</div>
-        <div class="hero-sub">Dokumentasi fungsional dan kapabilitas dari infrastruktur analisis yang digunakan.</div>
+    <div style="padding: 24px 0 8px;">
+        <div class="hero-title" style="font-size:40px;">Tentang <span class="hero-accent">Proyek</span></div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="metric-card" style="margin-bottom: 24px;">
-        <div style="font-size:16px; font-weight:700; color:var(--text-main); margin-bottom:12px;">Ruang Lingkup Fungsional</div>
-        <div style="font-size:15px; color:var(--text-muted); line-height:1.8;">
-            Aplikasi ini mendemonstrasikan implementasi rekayasa data tingkat lanjut (Web Mining) 
-            dan klasifikasi sentimen pada teks berbahasa Indonesia dengan memanfaatkan 
-            arsitektur transformer modern (RoBERTa & IndoBERT). Topik pengujian berfokus pada analisis 
-            opini publik pasca insiden transportasi, dengan mengambil rujukan metrik audiens pada stasiun berita nasional.
+    <div class="metric-card" style="margin-bottom: 16px;">
+        <div style="font-family:'Instrument Serif',serif; font-size:18px; margin-bottom:12px; color:#E8C547;"> Deskripsi</div>
+        <div style="font-size:14px; color:#C0BFBA; line-height:1.8;">
+            Proyek ini merupakan implementasi <strong style="color:#F0EFEA;">Web Mining dan Analisis Sentimen</strong> terhadap komentar YouTube 
+            pada video pemberitaan kecelakaan Kereta Api Agro Bromo. Data dikumpulkan dari tiga channel berita besar 
+            Indonesia: <strong style="color:#E63946;">TVONE</strong>, <strong style="color:#2196F3;">KOMPAS TV</strong>, 
+            dan <strong style="color:#4CAF50;">Metro TV</strong>.
         </div>
     </div>
 
-    <div class="metric-card" style="margin-bottom: 24px;">
-        <div style="font-size:16px; font-weight:700; color:var(--text-main); margin-bottom:12px;">Spesifikasi Teknologi Utama</div>
-        <div style="font-size:14px; color:var(--text-muted); line-height:2.2;">
-            <strong style="color:var(--text-main);">Data:</strong> YouTube Data API v3<br>
-            <strong style="color:var(--text-main);">Pemrosesan Teks:</strong> Sastrawi Stemmer, NLTK, Custom Mapping Regex<br>
-            <strong style="color:var(--text-main);">Komputasi Model:</strong> HuggingFace Pipeline (w11wo/roberta, mdhugol/indobert)<br>
-            <strong style="color:var(--text-main);">Klasifikasi:</strong> Scikit-learn (TF-IDF, Random Forest), XGBoost<br>
-            <strong style="color:var(--text-main);">Infrastruktur:</strong> Streamlit Framework
+    <div class="metric-card" style="margin-bottom: 16px;">
+        <div style="font-family:'Instrument Serif',serif; font-size:18px; margin-bottom:12px; color:#E8C547;">Tools</div>
+        <div style="font-size:14px; color:#C0BFBA; line-height:2;">
+            <strong style="color:#F0EFEA;">Data Collection:</strong> YouTube Data API v3<br>
+            <strong style="color:#F0EFEA;">Preprocessing:</strong> Sastrawi Stemmer, NLTK, Custom Slang Dict (~200+ kata)<br>
+            <strong style="color:#F0EFEA;">Sentiment Labeling:</strong> IndoBERT & RoBERTa (Indonesian fine-tuned)<br>
+            <strong style="color:#F0EFEA;">ML Classification:</strong> TF-IDF + Random Forest + XGBoost<br>
+            <strong style="color:#F0EFEA;">Topic Modelling:</strong> LDA (Gensim)<br>
+            <strong style="color:#F0EFEA;">Web App:</strong> Streamlit
         </div>
     </div>
 
-    <div class="metric-card" style="margin-bottom: 24px;">
-        <div style="font-size:16px; font-weight:700; color:var(--text-main); margin-bottom:12px;">Arsitektur Aliran Kerja (Workflow)</div>
-        <div style="font-size:14px; color:var(--text-muted); line-height:2.2;">
-            Tahap 1: Ekstraksi Data berbasis API<br>
-            Tahap 2: Pre-processing (Pembersihan, Normalisasi Slang, Stemming)<br>
-            Tahap 3: Pelabelan Sentimen Otomatis Menggunakan Pre-trained<br>
-            Tahap 4: Ekstraksi Fitur (N-gram, LDA Topic Modeling)<br>
-            Tahap 5: Deployment
+    <div class="metric-card" style="margin-bottom: 16px;">
+        <div style="font-family:'Instrument Serif',serif; font-size:18px; margin-bottom:12px; color:#E8C547;">Pipeline</div>
+        <div style="font-size:14px; color:#C0BFBA; line-height:2;">
+            [1] Install & Import → [2] Web Crawling (YouTube API) → [3] Preprocessing (clean, normalize, stem)<br>
+            [4] EDA (distribusi, wordcloud, timeline) → [5] Sentiment Analysis (IndoBERT / RoBERTa)<br>
+            [6] Web Mining (n-gram, topik) → [7] ML Classification (RF & XGBoost) → [8] Insight
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-title">Cara Instalasi</div>', unsafe_allow_html=True)
+    st.code("""# 1. Clone / siapkan file
+pip install streamlit transformers torch sastrawi nltk
+pip install scikit-learn xgboost gensim wordcloud
+pip install google-api-python-client matplotlib seaborn
+
+# 2. Jalankan
+streamlit run app.py
+""", language="bash")
+
+    st.markdown('<div class="section-title">Catatan Model</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="metric-card">
+        <div style="font-size:13px; color:#C0BFBA; line-height:1.8;">
+            • <strong style="color:#F0EFEA;">RoBERTa</strong>: <code>w11wo/indonesian-roberta-base-sentiment-classifier</code><br>
+            • <strong style="color:#F0EFEA;">IndoBERT</strong>: <code>mdhugol/indonesia-bert-sentiment-classification</code><br>
         </div>
     </div>
     """, unsafe_allow_html=True)
