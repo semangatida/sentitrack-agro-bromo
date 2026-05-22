@@ -70,7 +70,7 @@ section[data-testid="stSidebar"] * {
 }
 
 /* Hide Streamlit branding */
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
 
 /* CARD */
 .metric-card {
