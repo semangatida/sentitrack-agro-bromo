@@ -479,18 +479,17 @@ if "Dashboard" in page:
         ("KOMPAS", "#2196F3", "tag-kompas", "-lvgdiR6z1g"),
         ("METROTV", "#4CAF50", "tag-metrotv", "5EHTgRAyyMw"),
     ]
-    for col, (name, color, tag_cls, vid_id) in zip([col1,col2,col3], channels):
+    
+    for col, (name, color, tag_cls, vid_id) in zip([col1, col2, col3], channels):
         with col:
             st.markdown(f"""
             <div class="metric-card" style="border-left: 3px solid {color};">
                 <span class="channel-tag {tag_cls}">{name}</span>
-                <div style="font-size:12px; color:#888; margin: 10px 0 4px; font-family:monospace; font-size:11px;">{vid_id}</div>
-                <div style="font-size:13px; color:#C0BFBA;">{desc}</div>
+                <div style="font-size:12px; color:#888; margin: 10px 0 4px; font-family:monospace;">{vid_id}</div>
             </div>""", unsafe_allow_html=True)
 
     st.markdown('<br>', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Rumusan Masalah</div>', unsafe_allow_html=True)
-
 
 # PAGE: Analisis Sentimen (Single Input)
 
