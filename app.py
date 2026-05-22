@@ -33,10 +33,14 @@ st.markdown("""
     --muted: #888887;
 }
 
-html, body, [class*="css"], * {
-    font-family: 'Work Sans', sans-serif;
+html, body {
     background: var(--bg);
     color: var(--text);
+}
+
+/* font tetap global */
+* {
+    font-family: 'Work Sans', sans-serif;
 }
 
 .stApp {
@@ -143,32 +147,7 @@ section[data-testid="stSidebar"] * {
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(232,197,71,0.3) !important;
 }
-/* FIX BUTTON AGAR TIDAK ADA BACKGROUND HITAM DALAM */
-.stButton > button {
-    background: #E8C547 !important;
-    color: #0D0D0E !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-    padding: 12px 0 !important;
-    font-size: 14px !important;
-}
 
-/* HAPUS INNER BACKGROUND HITAM */
-.stButton > button > div {
-    background: transparent !important;
-}
-
-/* HAPUS SEMUA BACKGROUND DALAM BUTTON */
-.stButton > button * {
-    background: transparent !important;
-    box-shadow: none !important;
-}
-
-/* Hover tetap clean */
-.stButton > button:hover {
-    background: #F5D55F !important;
-}
 
 /* Progress bar */
 .stProgress > div > div > div {
