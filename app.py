@@ -18,7 +18,7 @@ st.set_page_config(
 # ── Custom CSS ───────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap');
 
 :root {
     --bg: #0D0D0E;
@@ -36,25 +36,20 @@ st.markdown("""
     --muted: #9A9A9A;
 }
 
-/* BASE */
+/* ===== BASE (JANGAN PAKAI *) ===== */
 html, body, .stApp {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Manrope', sans-serif !important;
+    font-family: 'Manrope', sans-serif;
 }
 
-/* FORCE ALL ELEMENTS */
-body, .stApp {
-    font-family: 'Manrope', sans-serif !important;
-}
-
-/* BALIKIN FONT ICON STREAMLIT */
-.material-icons,
-[class*="material-icons"] {
+/* ===== FIX ICON STREAMLIT (INI KUNCI BUG keyboard_double) ===== */
+i, span.material-icons, [class*="material-icons"] {
     font-family: 'Material Icons' !important;
+    font-style: normal;
 }
 
-/* HEADING */
+/* ===== HEADING ===== */
 .hero-title,
 .section-title,
 .metric-value,
@@ -63,35 +58,34 @@ body, .stApp {
     font-weight: 600;
 }
 
-/* SIDEBAR (FIX FONT DI SINI) */
-section[data-testid="stSidebar"],
+/* ===== SIDEBAR (PAKSA CONSISTENT) ===== */
+section[data-testid="stSidebar"] {
+    background: var(--surface) !important;
+    border-right: 1px solid var(--border);
+    font-family: 'Manrope', sans-serif !important;
+}
 section[data-testid="stSidebar"] * {
     font-family: 'Manrope', sans-serif !important;
     color: var(--text) !important;
 }
 
-section[data-testid="stSidebar"] {
-    background: var(--surface) !important;
-    border-right: 1px solid var(--border);
-}
-
-/* Hide branding */
+/* ===== HIDE BRANDING ===== */
 #MainMenu, footer { visibility: hidden; }
 
-/* CARD */
+/* ===== CARD ===== */
 .metric-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 20px 24px;
-    transition: all 0.2s ease;
+    transition: 0.2s;
 }
 .metric-card:hover {
     border-color: var(--accent);
     transform: translateY(-2px);
 }
 
-/* TEXT */
+/* ===== TEXT ===== */
 .metric-label {
     font-size: 11px;
     letter-spacing: 0.1em;
@@ -102,7 +96,7 @@ section[data-testid="stSidebar"] {
     color: var(--muted);
 }
 
-/* BADGE */
+/* ===== BADGE ===== */
 .badge {
     padding: 4px 12px;
     border-radius: 999px;
@@ -113,7 +107,7 @@ section[data-testid="stSidebar"] {
 .badge-neutral  { background: rgba(245,158,11,0.15); color: #F59E0B; }
 .badge-negative { background: rgba(239,68,68,0.15); color: #EF4444; }
 
-/* SECTION */
+/* ===== SECTION ===== */
 .section-title {
     font-size: 22px;
     margin: 24px 0 6px;
@@ -121,7 +115,7 @@ section[data-testid="stSidebar"] {
     padding-bottom: 10px;
 }
 
-/* INPUT */
+/* ===== INPUT ===== */
 .stTextArea textarea,
 .stTextInput input {
     background: var(--surface) !important;
@@ -134,13 +128,12 @@ section[data-testid="stSidebar"] {
     box-shadow: 0 0 0 2px rgba(255,106,42,0.2) !important;
 }
 
-/* SELECT (INI YANG SERING BEDA FONT) */
-.stSelectbox *,
+/* ===== SELECT ===== */
 div[data-baseweb="select"] * {
     font-family: 'Manrope', sans-serif !important;
 }
 
-/* BUTTON */
+/* ===== BUTTON ===== */
 .stButton > button {
     background: var(--accent) !important;
     color: white !important;
@@ -152,21 +145,18 @@ div[data-baseweb="select"] * {
     background: var(--accent-soft) !important;
     box-shadow: 0 6px 18px rgba(255,106,42,0.3);
 }
-
-/* REMOVE BLACK LAYER */
 .stButton > button * {
     background: transparent !important;
 }
 
-/* PROGRESS */
+/* ===== PROGRESS ===== */
 .stProgress > div > div > div {
     background: var(--accent) !important;
 }
 
-/* HERO */
+/* ===== HERO ===== */
 .hero-title {
     font-size: 48px;
-    letter-spacing: -0.02em;
 }
 .hero-accent { color: var(--accent); }
 .hero-sub {
@@ -174,14 +164,14 @@ div[data-baseweb="select"] * {
     color: var(--muted);
 }
 
-/* RESULT */
+/* ===== RESULT ===== */
 .result-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
 }
 
-/* TAB (INI JUGA SERING BEDA FONT) */
+/* ===== TAB ===== */
 button[data-baseweb="tab"] {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     color: var(--muted) !important;
@@ -191,13 +181,13 @@ button[data-baseweb="tab"][aria-selected="true"] {
     border-bottom: 2px solid var(--accent) !important;
 }
 
-/* CLEAN BACKGROUND */
+/* ===== CLEAN BACKGROUND ===== */
 [data-testid="stVerticalBlock"],
 [data-testid="stHorizontalBlock"] {
     background: transparent !important;
 }
 
-/* DIVIDER */
+/* ===== DIVIDER ===== */
 .divider {
     border-top: 1px solid var(--border);
     margin: 24px 0;
