@@ -412,15 +412,7 @@ if "Dashboard" in page:
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
     # Stats overview
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown("""
-        <div class="metric-card">
-            <div class="metric-label">Total Komentar</div>
-            <div class="metric-value" style="color:#3B82F6;">1,200</div>
-            <div class="metric-sub">Dari 3 channel YouTube</div>
-        </div>""", unsafe_allow_html=True)
-        
+    col2, col3, col4 = st.columns(3)  
     with col2:
         st.markdown("""
         <div class="metric-card">
