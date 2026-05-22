@@ -415,7 +415,7 @@ with st.sidebar:
         ① Web Crawling<br>
         ② Preprocessing<br>
         ③ NLP (Stemming)<br>
-        ④ Sentiment (Transformer)<br>
+        ④ Sentiment Labeling<br>
         ⑤ ML Classification
     </div>
     """, unsafe_allow_html=True)
