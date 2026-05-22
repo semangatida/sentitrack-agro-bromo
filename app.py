@@ -479,7 +479,7 @@ if "Dashboard" in page:
         ("KOMPAS", "#2196F3", "tag-kompas", "-lvgdiR6z1g"),
         ("METROTV", "#4CAF50", "tag-metrotv", "5EHTgRAyyMw"),
     ]
-    for col, (name, color, tag_cls, vid_id, desc) in zip([col1,col2,col3], channels):
+    for col, (name, color, tag_cls, vid_id) in zip([col1,col2,col3], channels):
         with col:
             st.markdown(f"""
             <div class="metric-card" style="border-left: 3px solid {color};">
