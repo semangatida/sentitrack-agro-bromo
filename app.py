@@ -485,14 +485,12 @@ if "Dashboard" in page:
             st.markdown(f"""
             <div class="metric-card" style="border-left: 3px solid {color};">
                 <span class="channel-tag {tag_cls}">{name}</span>
-                <div style="font-size:12px; color:#888; margin: 10px 0 4px; font-family:monospace;">{vid_id}</div>
+                <div style="color:#888; margin: 10px 0 4px; font-family:monospace; font-size:12px;">{vid_id}</div>
             </div>""", unsafe_allow_html=True)
 
     st.markdown('<br>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Rumusan Masalah</div>', unsafe_allow_html=True)
 
 # PAGE: Analisis Sentimen (Single Input)
-
 elif "Analisis Sentimen" in page:
     st.markdown("""
     <div style="padding: 24px 0 8px;">
